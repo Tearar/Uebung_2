@@ -20,7 +20,7 @@ public class BaziCrypt {
 
     public static void decryptBaziCryptFiles() throws UnsupportedEncodingException {
         readInBaziCryptFiles();
-        getEncryptionKeyFromPadding(baziFiles[0]);
+        getEncryptionKeyFromPadding(baziFiles[3]);
     }
     // for every position in the array:
     private static void getEncryptionKeyFromPadding(byte[] cipher) throws UnsupportedEncodingException {
