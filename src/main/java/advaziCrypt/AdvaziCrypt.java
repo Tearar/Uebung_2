@@ -6,44 +6,44 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class AdvaziCrypt {
-
+/** constants **/
     private static final String ADVAZI_CRYPT_FILE_FIVE = "assets/advaziCrypt/n04.txt.enc";
     private static final String ADVAZI_CRYPT_FILE_SIX = "assets/advaziCrypt/n05.txt.enc";
     private static final String ADVAZI_CRYPT_FILE_SEVEN = "assets/advaziCrypt/n06.txt.enc";
-
+/** variables **/
     private static byte[][] advaziFiles;
     private static List<Integer> keylengthList = new ArrayList<>();
     private static byte lengthOfPadding;
     private static byte[] key;
-
-
+    private static byte[] result;
     private static int keySize;
 
-    public static void decryptAdvaziCryptFiles() throws UnsupportedEncodingException {
-        readInBaziCryptFiles();
+    public static void decryptAdvaziCryptFiles() {
+        readInAdvaziCryptFiles();
         for (int i = 0; i < 3; i++) {
             getPossibleKeyLengths(advaziFiles[i]);
             byte[] cipher = advaziFiles[i];
-            keySize = findPopular(keylengthList);
+            keySize = findMostPopularSequenceLength(keylengthList);
             getPaddingLength(cipher);
-            System.out.println("Länge der sich meisten wiederholenden Sequenz: " + keySize);
-            System.out.println("Länge des Paddings: " + lengthOfPadding);
-
+            printInformation();
             calculateKey(cipher, lengthOfPadding);
-
-            //remove padding
             cipher = removePadding(cipher, lengthOfPadding);
-
-            //decrypt chiffre
-            byte[] plainText = getPlainByte(cipher, key);
-
-            try {
-                System.out.println(new String(plainText, "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-
+            getPlainByte(cipher, key);
+            printResult();
         }
+    }
+
+    private static void printResult() {
+        try {
+            System.out.println(new String(result, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+/** prints key size and length of padding **/
+    private static void printInformation() {
+        System.out.println("Länge der sich meisten wiederholenden Sequenz: " + keySize);
+        System.out.println("Länge des Paddings: " + lengthOfPadding);
     }
 
     private static void getPaddingLength(byte[] chiff) {
@@ -87,18 +87,16 @@ public class AdvaziCrypt {
         return unpaddedChiff;
     }
 
-
-    private static byte[] getPlainByte(byte[] chiffreText, byte[] ourKey) {
-        byte[] plain = new byte[chiffreText.length];
+/** calculates plain result text **/
+    private static void getPlainByte(byte[] chiffreText, byte[] ourKey) {
+        result = new byte[chiffreText.length];
         for (int i = 0; i < chiffreText.length; i++) {
             int position = i % (ourKey.length);
-            // XOR chiffre with key
-            plain[i] = (byte) (chiffreText[i] ^ ourKey[position]);
+            result[i] = (byte) (chiffreText[i] ^ ourKey[position]);
         }
-        return plain;
     }
-
-    private static void readInBaziCryptFiles() {
+/** reads in all advaziFiles into byte[][] **/
+    private static void readInAdvaziCryptFiles() {
         advaziFiles = new byte[3][];
         try {
             advaziFiles[0] = Files.readAllBytes(Paths.get(ADVAZI_CRYPT_FILE_FIVE));
@@ -109,18 +107,11 @@ public class AdvaziCrypt {
         }
     }
 
-
-    private static void getPossibleKeyLengths(byte[] cipher) throws UnsupportedEncodingException {
+/** checks file for repeating sequences **/
+    private static void getPossibleKeyLengths(byte[] cipher) {
         List<List<Byte>> keyPossibilities = new ArrayList<>();
         for (int startPos = 0; startPos < cipher.length; startPos++) {
-            // check if there is a repeating sequence here:
-            // check every sequence length which is lower or equal to half the
-            // remaining array length: (this is important, otherwise we'll go out of bounds)
             for (int sequenceLength = 1; sequenceLength <= (cipher.length - startPos) / 2; sequenceLength++) {
-
-                // check if the sequences of length sequenceLength which start
-                // at startPos and (startPos + sequenceLength (the one
-                // immediately following it)) are equal:
                 boolean sequencesAreEqual = true;
                 for (int i = 0; i < sequenceLength; i++) {
                     if (cipher[startPos + i] != cipher[startPos + sequenceLength + i]) {
@@ -129,14 +120,11 @@ public class AdvaziCrypt {
                     }
                 }
                 if (sequencesAreEqual) {
-                    // System.out.println("Found repeating sequence at pos " + startPos + " Endposition: " + (startPos + sequenceLength));
                     List<Byte> byteArray = new ArrayList<>();
                     for (int i = startPos; i < (startPos + sequenceLength); i++) {
                         byteArray.add(cipher[i]);
                     }
                     keyPossibilities.add(byteArray);
-
-
                     for (List<Byte> keyPossibility : keyPossibilities) {
                         keylengthList.add(keyPossibility.size());
                     }
@@ -145,7 +133,8 @@ public class AdvaziCrypt {
         }
     }
 
-    private static int findPopular(List<Integer> a) {
+    /** returns most populated integer in list **/
+    private static int findMostPopularSequenceLength(List<Integer> a) {
 
         if (a == null || a.size() == 0)
             return 0;
